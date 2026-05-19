@@ -375,13 +375,9 @@ Tauri integration tests — позже, для POC manual.
 | Sanctum vs Passport/JWT | | Простота, уже стандарт Laravel; не нужны OAuth-flow'ы |
 | GitHub Releases для updates | proxy на octane | Простота; для POC public-OK; код приложения не содержит секретов |
 
-## 14. Open questions for user before implementation plan
+## 14. Decisions confirmed (2026-05-19)
 
-(если что-то спорно — поднять до start; иначе пропускаем)
-
-- [ ] Подтвердить: репо `mttzzz/sales-agent` будет **public** (для GitHub Releases auto-update) или **private** (тогда нужен proxy)
-- [ ] Подтвердить: показывать в overlay только "Новая заявка" + countdown без источника? Или показывать pipeline-source ("Сайт" / "Звонок") как мотивационный сигнал, не PII?
-- [ ] Подтвердить: один AmoUser может одновременно иметь активные device-токены на нескольких машинах (multi-device)? Сейчас спека позволяет — каждый Offer уходит на ВСЕ его devices, accept с одного дисмиссит остальные.
-- [ ] Подтвердить: после "Принять" мы открываем amoCRM-ссылку в браузере по умолчанию (через `tauri-plugin-opener`) — не возникнет проблем с тем что у менеджера может быть несколько браузеров / профилей?
-
-Если ответы стандартные ("да / да / да / да") — никаких блокеров, идём писать план.
+- **Repo visibility**: `mttzzz/sales-agent` — **public**. GitHub Releases используется как updater-host напрямую, без proxy.
+- **Overlay content**: только заголовок «Новая заявка» + countdown + две кнопки. Без источника / pipeline-инфы. Поле `offers.label` в БД остаётся для будущего, UI POC игнорирует.
+- **Multi-device per AmoUser**: разрешено. Каждый Offer рассылается на все active devices этого AmoUser-а; accept с любого из них дисмиссит все остальные (через broadcast `OfferTaken` на тот же `private-amoUser.{id}`).
+- **Open lead URL**: после accept octane возвращает `lead_url`; desktop открывает его через `tauri-plugin-opener` в дефолтном браузере OS.
