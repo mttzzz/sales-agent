@@ -15,7 +15,7 @@ let storePromise: Promise<Store> | null = null
 
 function getStore(): Promise<Store> {
   if (!storePromise) {
-    storePromise = load(STORE_FILE, { autoSave: false })
+    storePromise = load(STORE_FILE, { autoSave: false, defaults: {} })
   }
   return storePromise
 }
