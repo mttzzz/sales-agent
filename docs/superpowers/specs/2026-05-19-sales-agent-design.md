@@ -15,7 +15,7 @@ Status: draft → for user review
 - Аналитика принятий / отказов / SLA — позже, не POC.
 - Multi-account UI (выбор amo-аккаунта при логине) — схема готова, UI хардкодит mogoby.
 - Полноценный auth с паролями — для POC хватает email-OTP (см. §6).
-- Linux desktop сборка — POC только macOS + Windows (Mac первый).
+- Linux desktop сборка — POC только macOS (только Apple Silicon — arm64) + Windows. Intel Mac (`x86_64-apple-darwin`) исключён из POC: managers пользуются M-серии Mac'ами, а очередь macos-13 в GH-Actions слишком долгая (~10+ мин queueing). Добавим обратно если появится Intel-юзер.
 - Голосовые звонки / встроенный CRM-функционал — приложение только маршрутизирует.
 
 ## 3. Glossary
