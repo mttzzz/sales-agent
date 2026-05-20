@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useAuth, loadAuth } from './composables/useAuth'
+import { maybeAutoUpdate } from './composables/useUpdater'
 import LoginScreen from './views/LoginScreen.vue'
 import CodeScreen from './views/CodeScreen.vue'
 import MainScreen from './views/MainScreen.vue'
@@ -8,6 +9,8 @@ import MainScreen from './views/MainScreen.vue'
 const { state } = useAuth()
 
 onMounted(async () => {
+  // Check for updates first; if newer version exists it installs and relaunches.
+  await maybeAutoUpdate()
   try {
     await loadAuth()
   } catch (e) {
