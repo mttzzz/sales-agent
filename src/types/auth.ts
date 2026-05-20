@@ -5,11 +5,19 @@ export interface AmoUser {
   avatar_url: string | null
 }
 
+export interface AccountInfo {
+  id: number
+  subdomain: string
+  name: string
+}
+
 export type AuthPhase = 'login' | 'code' | 'main'
 
 export interface AuthState {
   phase: AuthPhase
   selected_user: AmoUser | null
-  /** При phase='main' хранит того же selected_user — для удобства потребителей. */
   logged_in_user: AmoUser | null
+  token: string | null
+  dnd_on: boolean
+  account: AccountInfo | null
 }

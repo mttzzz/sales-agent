@@ -1,6 +1,0 @@
-[
-  { "id": 1, "name": "Анна Иванова", "email": "anna@mogoby.example", "avatar_url": null },
-  { "id": 2, "name": "Борис Петров", "email": "boris@mogoby.example", "avatar_url": null },
-  { "id": 3, "name": "Виктория Сидорова", "email": "vika@mogoby.example", "avatar_url": null },
-  { "id": 4, "name": "Григорий Орлов", "email": "grisha@mogoby.example", "avatar_url": null }
-]

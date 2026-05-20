@@ -5,20 +5,24 @@ import { useAuth } from '../composables/useAuth'
 const { state, verifyCode, backToLogin } = useAuth()
 const code = ref('')
 const error = ref<string | null>(null)
+const submitting = ref(false)
 const valid = computed(() => /^\d{6}$/.test(code.value))
 
-function onSubmit() {
-  if (!verifyCode(code.value)) {
-    error.value = 'Код должен быть 6 цифр'
-    return
-  }
+async function onSubmit() {
+  if (submitting.value || !valid.value) return
+  submitting.value = true
   error.value = null
+  const result = await verifyCode(code.value)
+  if (!result.ok) {
+    error.value = result.error
+  }
+  submitting.value = false
 }
 
-function onCancel() {
+async function onCancel() {
   code.value = ''
   error.value = null
-  backToLogin()
+  await backToLogin()
 }
 </script>
 
@@ -28,9 +32,8 @@ function onCancel() {
     <p class="hint">
       <strong>{{ state.selected_user?.name }}</strong>
       <br />
-      <span class="muted">{{ state.selected_user?.email }}</span>
+      <span class="muted">Код отправлен на {{ state.selected_user?.email }}</span>
     </p>
-    <p class="poc-note">POC: любые 6 цифр подойдут</p>
     <form class="code-form" @submit.prevent="onSubmit">
       <input
         v-model="code"
@@ -39,10 +42,13 @@ function onCancel() {
         maxlength="6"
         placeholder="000000"
         autofocus
+        :disabled="submitting"
       />
       <div v-if="error" class="error">{{ error }}</div>
-      <button type="submit" class="primary" :disabled="!valid">Войти</button>
-      <button type="button" class="link" @click="onCancel">← Назад</button>
+      <button type="submit" class="primary" :disabled="!valid || submitting">
+        {{ submitting ? 'Проверка…' : 'Войти' }}
+      </button>
+      <button type="button" class="link" :disabled="submitting" @click="onCancel">← Назад</button>
     </form>
   </main>
 </template>
@@ -56,9 +62,8 @@ function onCancel() {
   box-sizing: border-box;
 }
 h1 { margin: 0 0 12px; font-size: 1.4rem; }
-.hint { margin: 0 0 4px; }
+.hint { margin: 0 0 16px; }
 .muted { opacity: 0.55; font-size: 0.8rem; }
-.poc-note { margin: 4px 0 24px; opacity: 0.4; font-size: 0.75rem; font-style: italic; }
 .code-form { display: flex; flex-direction: column; gap: 12px; }
 input {
   font-size: 2rem;
@@ -72,6 +77,7 @@ input {
   font-family: ui-monospace, monospace;
 }
 input:focus { outline: none; border-color: #2d6cdf; }
+input:disabled { opacity: 0.5; }
 .error { color: #ff6464; font-size: 0.85rem; }
 .primary {
   padding: 10px;
@@ -86,5 +92,6 @@ input:focus { outline: none; border-color: #2d6cdf; }
   opacity: 0.6; cursor: pointer; padding: 8px;
   font-family: inherit;
 }
-.link:hover { opacity: 1; }
+.link:hover:not(:disabled) { opacity: 1; }
+.link:disabled { opacity: 0.3; cursor: not-allowed; }
 </style>
