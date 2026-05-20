@@ -1,19 +1,45 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { isEnabled as isAutostartEnabled, enable as enableAutostart, disable as disableAutostart } from '@tauri-apps/plugin-autostart'
 import { useAuth } from '../composables/useAuth'
 import { useWs } from '../composables/useWs'
 
-const { state, logout } = useAuth()
-const { status, newLeadsCount, latestLead } = useWs()
+const { state, logout, toggleDnd } = useAuth()
+const { status } = useWs()
 
-const leadsLabel = computed(() => {
-  const n = newLeadsCount.value
-  const mod10 = n % 10
-  const mod100 = n % 100
-  if (mod10 === 1 && mod100 !== 11) return `${n} заявка`
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return `${n} заявки`
-  return `${n} заявок`
+const autostartOn = ref(false)
+const autostartBusy = ref(false)
+const dndBusy = ref(false)
+
+onMounted(async () => {
+  try { autostartOn.value = await isAutostartEnabled() }
+  catch (err) { console.warn('autostart probe failed', err) }
 })
+
+async function onToggleAutostart(): Promise<void> {
+  if (autostartBusy.value) return
+  autostartBusy.value = true
+  try {
+    if (autostartOn.value) {
+      await disableAutostart()
+      autostartOn.value = false
+    } else {
+      await enableAutostart()
+      autostartOn.value = true
+    }
+  } catch (err) {
+    console.warn('autostart toggle failed', err)
+  } finally {
+    autostartBusy.value = false
+  }
+}
+
+async function onToggleDnd(): Promise<void> {
+  if (dndBusy.value) return
+  dndBusy.value = true
+  try { await toggleDnd() }
+  finally { dndBusy.value = false }
+}
 
 const statusInfo = computed(() => {
   switch (status.value) {
@@ -49,13 +75,41 @@ const statusInfo = computed(() => {
     <div class="status" :class="`status-${statusInfo.dot}`">
       <div class="dot" :class="statusInfo.dot" />
       <span>{{ statusInfo.text }}</span>
-      <span v-if="newLeadsCount > 0" class="leads-badge">{{ leadsLabel }}</span>
     </div>
 
-    <p v-if="latestLead" class="latest-lead">
-      Последняя: сделка #{{ latestLead.lead_id }}
-    </p>
-    <p v-else class="poc-note">Ждём первую заявку…</p>
+    <section class="settings">
+      <label class="setting" :class="{ busy: dndBusy }">
+        <div class="setting-text">
+          <div class="setting-title">Не беспокоить</div>
+          <div class="setting-hint">Уведомления о новых заявках выключены</div>
+        </div>
+        <button
+          type="button"
+          class="toggle"
+          :class="{ on: state.dnd_on }"
+          :disabled="dndBusy"
+          @click="onToggleDnd"
+        >
+          <span class="knob" />
+        </button>
+      </label>
+
+      <label class="setting" :class="{ busy: autostartBusy }">
+        <div class="setting-text">
+          <div class="setting-title">Автозапуск с ОС</div>
+          <div class="setting-hint">Sales Agent запустится после входа в систему</div>
+        </div>
+        <button
+          type="button"
+          class="toggle"
+          :class="{ on: autostartOn }"
+          :disabled="autostartBusy"
+          @click="onToggleAutostart"
+        >
+          <span class="knob" />
+        </button>
+      </label>
+    </section>
 
     <button class="logout" @click="logout">Выйти</button>
   </main>
@@ -105,7 +159,7 @@ const statusInfo = computed(() => {
   display: flex; align-items: center; gap: 10px;
   padding: 12px 14px;
   border-radius: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
   font-size: 0.9rem;
   transition: background 0.2s, border-color 0.2s;
 }
@@ -132,34 +186,51 @@ const statusInfo = computed(() => {
   50% { opacity: 1; }
 }
 
-.poc-note {
-  opacity: 0.4;
-  font-size: 0.78rem;
-  line-height: 1.5;
+.settings {
+  display: flex; flex-direction: column; gap: 8px;
   margin: 0 0 auto;
 }
-
-.leads-badge {
-  margin-left: auto;
-  padding: 3px 9px;
-  background: rgba(78, 181, 110, 0.18);
-  border: 1px solid rgba(78, 181, 110, 0.4);
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: #6dd494;
+.setting {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  cursor: pointer;
 }
+.setting.busy { opacity: 0.55; cursor: progress; }
+.setting-text { flex: 1; min-width: 0; }
+.setting-title { font-size: 0.92rem; font-weight: 500; }
+.setting-hint { font-size: 0.74rem; opacity: 0.5; margin-top: 3px; line-height: 1.4; }
 
-.latest-lead {
-  opacity: 0.7;
-  font-size: 0.82rem;
-  line-height: 1.5;
-  margin: 0 0 auto;
-  color: #6dd494;
+.toggle {
+  width: 40px; height: 22px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 11px;
+  padding: 1px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
 }
+.toggle:disabled { cursor: progress; }
+.toggle.on {
+  background: rgba(45, 108, 223, 0.55);
+  border-color: rgba(90, 134, 232, 0.7);
+}
+.knob {
+  display: block;
+  width: 18px; height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.toggle.on .knob { transform: translateX(18px); }
 
 .logout {
-  margin-top: 20px;
+  margin-top: 18px;
   padding: 11px;
   background: none;
   border: 1px solid rgba(255, 255, 255, 0.18);

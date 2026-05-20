@@ -11,35 +11,25 @@ interface LeadPayload {
 }
 
 const leadId = ref<number | null>(null)
-const secondsLeft = ref(0)
 
 let unlistenLead: UnlistenFn | null = null
 let dismissTimer: ReturnType<typeof setTimeout> | null = null
-let countdownTimer: ReturnType<typeof setInterval> | null = null
 const overlayWindow = getCurrentWebviewWindow()
 
-function clearTimers(): void {
+function clearDismiss(): void {
   if (dismissTimer) { clearTimeout(dismissTimer); dismissTimer = null }
-  if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null }
 }
 
 async function dismiss(): Promise<void> {
-  clearTimers()
+  clearDismiss()
   leadId.value = null
-  secondsLeft.value = 0
   try { await overlayWindow.hide() }
   catch (err) { console.warn('[overlay] hide failed', err) }
 }
 
 function arm(payload: LeadPayload): void {
-  clearTimers()
+  clearDismiss()
   leadId.value = payload.lead_id
-  secondsLeft.value = Math.round(AUTO_DISMISS_MS / 1000)
-
-  countdownTimer = setInterval(() => {
-    if (secondsLeft.value > 0) secondsLeft.value -= 1
-  }, 1000)
-
   dismissTimer = setTimeout(() => { void dismiss() }, AUTO_DISMISS_MS)
 }
 
@@ -51,20 +41,22 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (unlistenLead) unlistenLead()
-  clearTimers()
+  clearDismiss()
 })
 </script>
 
 <template>
   <div class="overlay-root" @click="dismiss">
     <div class="card">
-      <div class="ring">
-        <span class="ring-num">{{ secondsLeft }}</span>
+      <div class="icon">
+        <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
       </div>
       <div class="text">
         <div class="title">Новая заявка</div>
         <div class="subtitle">Сделка #{{ leadId ?? '—' }}</div>
-        <div class="hint">Кликни чтобы закрыть · авто-закрытие через {{ secondsLeft }} с</div>
       </div>
     </div>
   </div>
@@ -109,37 +101,28 @@ html, body {
   color: white;
 }
 
-.ring {
-  width: 76px;
-  height: 76px;
+.icon {
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  border: 2px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.14);
+  border: 2px solid rgba(255, 255, 255, 0.4);
   display: grid;
   place-items: center;
   flex-shrink: 0;
-}
-.ring-num {
-  font-size: 1.8rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+  color: white;
 }
 
 .text { min-width: 0; }
 .title {
-  font-size: 1.4rem;
+  font-size: 1.45rem;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 .subtitle {
-  font-size: 1.05rem;
-  margin-top: 4px;
-  opacity: 0.9;
+  font-size: 1.1rem;
+  margin-top: 6px;
+  opacity: 0.92;
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-}
-.hint {
-  font-size: 0.78rem;
-  opacity: 0.65;
-  margin-top: 10px;
 }
 </style>

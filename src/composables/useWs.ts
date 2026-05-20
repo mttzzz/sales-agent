@@ -10,14 +10,12 @@ const AUTH_ENDPOINT = (import.meta.env.VITE_SALES_AGENT_AUTH_ENDPOINT as string 
 
 export type WsStatus = 'idle' | 'connecting' | 'connected' | 'disconnected' | 'error'
 
-export interface NewLeadPayload {
+interface NewLeadPayload {
   lead_id: number
   at: string
 }
 
 const status = ref<WsStatus>('idle')
-const newLeadsCount = ref(0)
-const latestLead = ref<NewLeadPayload | null>(null)
 
 let pusher: Pusher | null = null
 let channel: Channel | null = null
@@ -80,8 +78,6 @@ export function startWs(token: string, amoUserId: number): void {
   })
   channel.bind('NewLeadIncoming', (data: NewLeadPayload) => {
     console.log('[ws] NewLeadIncoming:', data)
-    newLeadsCount.value += 1
-    latestLead.value = data
     void notifyNewLead(data.lead_id)
   })
 }
@@ -96,14 +92,10 @@ export function stopWs(): void {
     pusher = null
   }
   status.value = 'idle'
-  newLeadsCount.value = 0
-  latestLead.value = null
 }
 
 export function useWs() {
   return {
     status: readonly(status),
-    newLeadsCount: readonly(newLeadsCount),
-    latestLead: readonly(latestLead),
   }
 }
