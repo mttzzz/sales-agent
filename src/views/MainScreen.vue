@@ -3,9 +3,15 @@ import { computed, onMounted, ref } from 'vue'
 import { isEnabled as isAutostartEnabled, enable as enableAutostart, disable as disableAutostart } from '@tauri-apps/plugin-autostart'
 import { useAuth } from '../composables/useAuth'
 import { useWs } from '../composables/useWs'
+import { notifyNewLead, useOverlayDebug } from '../composables/useNotifications'
 
 const { state, logout, toggleDnd } = useAuth()
 const { status } = useWs()
+const { lastError, lastTriggeredAt, lastLeadId } = useOverlayDebug()
+
+async function onTestOverlay(): Promise<void> {
+  await notifyNewLead(Math.floor(Math.random() * 100000))
+}
 
 const autostartOn = ref(false)
 const autostartBusy = ref(false)
@@ -118,6 +124,14 @@ const wsDetail = computed(() => {
           <span class="knob" />
         </button>
       </label>
+    </section>
+
+    <section class="debug">
+      <button class="debug-btn" type="button" @click="onTestOverlay">Тест overlay (debug)</button>
+      <div v-if="lastError" class="debug-error">⚠ {{ lastError }}</div>
+      <div v-else-if="lastTriggeredAt" class="debug-ok">
+        ✓ overlay вызван для #{{ lastLeadId }} @ {{ lastTriggeredAt?.slice(11, 19) }}
+      </div>
     </section>
 
     <button class="logout" @click="logout">Выйти</button>
@@ -246,8 +260,42 @@ const wsDetail = computed(() => {
 }
 .toggle.on .knob { transform: translateX(18px); }
 
+.debug {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: rgba(255, 200, 0, 0.06);
+  border: 1px dashed rgba(255, 200, 0, 0.3);
+  border-radius: 8px;
+  font-size: 0.78rem;
+}
+.debug-btn {
+  width: 100%;
+  padding: 8px;
+  background: rgba(255, 200, 0, 0.15);
+  border: 1px solid rgba(255, 200, 0, 0.35);
+  color: inherit;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+}
+.debug-btn:hover { background: rgba(255, 200, 0, 0.25); }
+.debug-error {
+  margin-top: 8px;
+  color: #e55a5a;
+  word-break: break-all;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.72rem;
+}
+.debug-ok {
+  margin-top: 8px;
+  color: #6dd494;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.74rem;
+}
+
 .logout {
-  margin-top: 18px;
+  margin-top: 14px;
   padding: 11px;
   background: none;
   border: 1px solid rgba(255, 255, 255, 0.18);
