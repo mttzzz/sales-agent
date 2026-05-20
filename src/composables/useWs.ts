@@ -12,10 +12,13 @@ export type WsStatus = 'idle' | 'connecting' | 'connected' | 'disconnected' | 'e
 
 interface NewLeadPayload {
   lead_id: number
+  lead_url: string
   at: string
 }
 
 const status = ref<WsStatus>('idle')
+const eventsReceived = ref(0)
+const lastEventName = ref<string | null>(null)
 
 let pusher: Pusher | null = null
 let channel: Channel | null = null
@@ -64,6 +67,13 @@ export function startWs(token: string, amoUserId: number): void {
     status.value = 'error'
   })
 
+  pusher.bind_global((event: string, data: unknown) => {
+    if (event.startsWith('pusher:') || event.startsWith('pusher_internal:')) return
+    eventsReceived.value += 1
+    lastEventName.value = event
+    console.log(`[ws-global] event=${event} data=`, data)
+  })
+
   const channelName = `private-amoUser.${amoUserId}`
   channel = pusher.subscribe(channelName)
   channel.bind('pusher:subscription_succeeded', () => {
@@ -78,7 +88,7 @@ export function startWs(token: string, amoUserId: number): void {
   })
   channel.bind('NewLeadIncoming', (data: NewLeadPayload) => {
     console.log('[ws] NewLeadIncoming:', data)
-    void notifyNewLead(data.lead_id)
+    void notifyNewLead(data.lead_id, data.lead_url)
   })
 }
 
@@ -97,5 +107,7 @@ export function stopWs(): void {
 export function useWs() {
   return {
     status: readonly(status),
+    eventsReceived: readonly(eventsReceived),
+    lastEventName: readonly(lastEventName),
   }
 }

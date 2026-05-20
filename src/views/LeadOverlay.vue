@@ -2,15 +2,18 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
+import { openUrl } from '@tauri-apps/plugin-opener'
 
 const AUTO_DISMISS_MS = 30_000
 
 interface LeadPayload {
   lead_id: number
+  lead_url: string
   at: string
 }
 
 const leadId = ref<number | null>(null)
+const leadUrl = ref<string>('')
 
 let unlistenLead: UnlistenFn | null = null
 let dismissTimer: ReturnType<typeof setTimeout> | null = null
@@ -23,13 +26,24 @@ function clearDismiss(): void {
 async function dismiss(): Promise<void> {
   clearDismiss()
   leadId.value = null
+  leadUrl.value = ''
   try { await overlayWindow.hide() }
   catch (err) { console.warn('[overlay] hide failed', err) }
+}
+
+async function accept(): Promise<void> {
+  const url = leadUrl.value
+  if (url) {
+    try { await openUrl(url) }
+    catch (err) { console.warn('[overlay] openUrl failed', err) }
+  }
+  await dismiss()
 }
 
 function arm(payload: LeadPayload): void {
   clearDismiss()
   leadId.value = payload.lead_id
+  leadUrl.value = payload.lead_url
   dismissTimer = setTimeout(() => { void dismiss() }, AUTO_DISMISS_MS)
 }
 
@@ -46,17 +60,23 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="overlay-root" @click="dismiss">
+  <div class="overlay-root">
     <div class="card">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-          <polyline points="22 4 12 14.01 9 11.01"/>
-        </svg>
+      <div class="header">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </div>
+        <div class="text">
+          <div class="title">Новая заявка</div>
+          <div class="subtitle">Сделка #{{ leadId ?? '—' }}</div>
+        </div>
       </div>
-      <div class="text">
-        <div class="title">Новая заявка</div>
-        <div class="subtitle">Сделка #{{ leadId ?? '—' }}</div>
+      <div class="actions">
+        <button class="btn-secondary" type="button" @click="dismiss">Отказаться</button>
+        <button class="btn-primary" type="button" @click="accept">Принять</button>
       </div>
     </div>
   </div>
@@ -71,7 +91,6 @@ html, body {
   overflow: hidden;
   font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
   user-select: none;
-  cursor: pointer;
 }
 #overlay { height: 100%; }
 </style>
@@ -94,16 +113,23 @@ html, body {
   border-radius: 18px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
   display: flex;
-  align-items: center;
-  gap: 22px;
-  padding: 22px 26px;
+  flex-direction: column;
+  padding: 18px 22px;
   box-sizing: border-box;
   color: white;
+  gap: 14px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
 }
 
 .icon {
-  width: 64px;
-  height: 64px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.14);
   border: 2px solid rgba(255, 255, 255, 0.4);
@@ -115,14 +141,44 @@ html, body {
 
 .text { min-width: 0; }
 .title {
-  font-size: 1.45rem;
+  font-size: 1.3rem;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 .subtitle {
-  font-size: 1.1rem;
-  margin-top: 6px;
+  font-size: 1rem;
+  margin-top: 4px;
   opacity: 0.92;
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
 }
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+.btn-primary, .btn-secondary {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.05s ease, background 0.15s;
+}
+.btn-primary:active, .btn-secondary:active { transform: scale(0.97); }
+
+.btn-primary {
+  background: white;
+  color: #1f3a8a;
+  border: none;
+}
+.btn-primary:hover { background: rgba(255, 255, 255, 0.92); }
+
+.btn-secondary {
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+.btn-secondary:hover { background: rgba(255, 255, 255, 0.1); }
 </style>

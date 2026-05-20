@@ -6,11 +6,14 @@ import { useWs } from '../composables/useWs'
 import { notifyNewLead, useOverlayDebug } from '../composables/useNotifications'
 
 const { state, logout, toggleDnd } = useAuth()
-const { status } = useWs()
+const { status, eventsReceived, lastEventName } = useWs()
 const { lastError, lastTriggeredAt, lastLeadId } = useOverlayDebug()
 
 async function onTestOverlay(): Promise<void> {
-  await notifyNewLead(Math.floor(Math.random() * 100000))
+  const id = Math.floor(Math.random() * 100000)
+  const sub = state.account?.subdomain ?? 'mogoby'
+  const url = `https://${sub}.amocrm.ru/leads/detail/${id}`
+  await notifyNewLead(id, url)
 }
 
 const autostartOn = ref(false)
@@ -128,6 +131,7 @@ const wsDetail = computed(() => {
 
     <section class="debug">
       <button class="debug-btn" type="button" @click="onTestOverlay">Тест overlay (debug)</button>
+      <div class="debug-info">ws events received: {{ eventsReceived }} · last: {{ lastEventName ?? '—' }}</div>
       <div v-if="lastError" class="debug-error">⚠ {{ lastError }}</div>
       <div v-else-if="lastTriggeredAt" class="debug-ok">
         ✓ overlay вызван для #{{ lastLeadId }} @ {{ lastTriggeredAt?.slice(11, 19) }}
@@ -280,6 +284,12 @@ const wsDetail = computed(() => {
   font-size: 0.82rem;
 }
 .debug-btn:hover { background: rgba(255, 200, 0, 0.25); }
+.debug-info {
+  margin-top: 8px;
+  opacity: 0.7;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.72rem;
+}
 .debug-error {
   margin-top: 8px;
   color: #e55a5a;

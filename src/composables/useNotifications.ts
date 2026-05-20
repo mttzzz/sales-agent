@@ -12,7 +12,7 @@ export function useOverlayDebug() {
   return { lastError, lastTriggeredAt, lastLeadId }
 }
 
-export async function notifyNewLead(leadId: number): Promise<void> {
+export async function notifyNewLead(leadId: number, leadUrl: string): Promise<void> {
   lastTriggeredAt.value = new Date().toISOString()
   lastLeadId.value = leadId
   lastError.value = null
@@ -36,6 +36,7 @@ export async function notifyNewLead(leadId: number): Promise<void> {
   try {
     await emitTo(OVERLAY_LABEL, 'new-lead', {
       lead_id: leadId,
+      lead_url: leadUrl,
       at: new Date().toISOString(),
     })
   }
