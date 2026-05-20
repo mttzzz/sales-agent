@@ -2,7 +2,7 @@
 import { onMounted, ref, watch } from 'vue'
 import { getVersion } from '@tauri-apps/api/app'
 import { useAuth, loadAuth } from './composables/useAuth'
-import { maybeAutoUpdate, startPeriodicCheck } from './composables/useUpdater'
+import { maybeAutoUpdate } from './composables/useUpdater'
 import { startWs, stopWs } from './composables/useWs'
 import LoginScreen from './views/LoginScreen.vue'
 import CodeScreen from './views/CodeScreen.vue'
@@ -13,8 +13,7 @@ const version = ref('?')
 
 onMounted(async () => {
   version.value = await getVersion().catch(() => '?')
-  await maybeAutoUpdate()
-  startPeriodicCheck()
+  void maybeAutoUpdate()
   try {
     await loadAuth()
   } catch (e) {

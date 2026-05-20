@@ -54,6 +54,12 @@ const statusInfo = computed(() => {
       return { dot: 'error', text: 'Ошибка подключения' }
   }
 })
+
+const wsDetail = computed(() => {
+  const uid = state.logged_in_user?.id
+  if (!uid) return 'reverb.pushka.biz'
+  return `amoUser.${uid} · reverb.pushka.biz`
+})
 </script>
 
 <template>
@@ -74,7 +80,10 @@ const statusInfo = computed(() => {
 
     <div class="status" :class="`status-${statusInfo.dot}`">
       <div class="dot" :class="statusInfo.dot" />
-      <span>{{ statusInfo.text }}</span>
+      <div class="status-lines">
+        <div class="status-text">{{ statusInfo.text }}</div>
+        <div class="status-detail">{{ wsDetail }}</div>
+      </div>
     </div>
 
     <section class="settings">
@@ -156,12 +165,20 @@ const statusInfo = computed(() => {
 .account { font-size: 0.78rem; opacity: 0.45; margin-top: 4px; font-family: ui-monospace, monospace; }
 
 .status {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 12px;
   padding: 12px 14px;
   border-radius: 10px;
   margin-bottom: 18px;
   font-size: 0.9rem;
   transition: background 0.2s, border-color 0.2s;
+}
+.status-lines { min-width: 0; line-height: 1.25; }
+.status-text { font-size: 0.92rem; }
+.status-detail {
+  font-size: 0.7rem;
+  opacity: 0.55;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  margin-top: 2px;
 }
 .status-connected {
   background: rgba(78, 181, 110, 0.08);
