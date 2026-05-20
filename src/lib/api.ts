@@ -1,13 +1,7 @@
-import type { AmoUser } from '../types/auth'
+import type { AccountInfo, AmoUser } from '../types/auth'
 
 const API_BASE_URL = 'https://octane.pushka.biz/api/desktop/v1'
 const BOOTSTRAP_TOKEN = (import.meta.env.VITE_DESKTOP_BOOTSTRAP_TOKEN as string | undefined) ?? ''
-
-export interface AccountInfo {
-  id: number
-  subdomain: string
-  name: string
-}
 
 export interface VerifyCodeResponse {
   token: string
@@ -63,28 +57,39 @@ async function bearerRequest(path: string, token: string, init: RequestInit = {}
   })
 }
 
-export async function listAmoUsers(accountSlug: string): Promise<AmoUser[]> {
-  const r = await bootstrapRequest(`/accounts/${encodeURIComponent(accountSlug)}/amo-users`)
-  if (!r.ok) throw new ApiError(r.status, await readJson(r))
-  return r.json()
+function buildError(r: Response, payload: unknown): ApiError {
+  const message = payload && typeof payload === 'object' && payload !== null && 'message' in payload
+    ? String((payload as { message: unknown }).message)
+    : undefined
+  return new ApiError(r.status, payload, message)
 }
 
-export async function requestCode(amoUserId: number): Promise<void> {
+export async function requestCode(account: string, email: string): Promise<void> {
   const r = await bootstrapRequest('/auth/request-code', {
     method: 'POST',
-    body: JSON.stringify({ amo_user_id: amoUserId }),
+    body: JSON.stringify({ account, email }),
   })
   if (r.status === 429) throw new ApiError(429, null, 'Слишком частые запросы. Подожди минуту.')
-  if (!r.ok) throw new ApiError(r.status, await readJson(r))
+  if (!r.ok) {
+    const payload = await readJson(r)
+    throw buildError(r, payload)
+  }
 }
 
-export async function verifyCode(amoUserId: number, code: string, deviceLabel?: string): Promise<VerifyCodeResponse> {
+export async function verifyCode(
+  account: string,
+  email: string,
+  code: string,
+  deviceLabel?: string,
+): Promise<VerifyCodeResponse> {
   const r = await bootstrapRequest('/auth/verify-code', {
     method: 'POST',
-    body: JSON.stringify({ amo_user_id: amoUserId, code, device_label: deviceLabel }),
+    body: JSON.stringify({ account, email, code, device_label: deviceLabel }),
   })
-  if (r.status === 422) throw new ApiError(422, await readJson(r), 'Неверный или истёкший код')
-  if (!r.ok) throw new ApiError(r.status, await readJson(r))
+  if (!r.ok) {
+    const payload = await readJson(r)
+    throw buildError(r, payload)
+  }
   return r.json() as Promise<VerifyCodeResponse>
 }
 

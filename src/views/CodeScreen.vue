@@ -30,9 +30,11 @@ async function onCancel() {
   <main class="screen">
     <h1>Введи код</h1>
     <p class="hint">
-      <strong>{{ state.selected_user?.name }}</strong>
+      Код отправлен на
       <br />
-      <span class="muted">Код отправлен на {{ state.selected_user?.email }}</span>
+      <strong>{{ state.pending_email }}</strong>
+      <br />
+      <span class="muted">аккаунт {{ state.pending_account }}.amocrm.ru</span>
     </p>
     <form class="code-form" @submit.prevent="onSubmit">
       <input
@@ -62,7 +64,7 @@ async function onCancel() {
   box-sizing: border-box;
 }
 h1 { margin: 0 0 12px; font-size: 1.4rem; }
-.hint { margin: 0 0 16px; }
+.hint { margin: 0 0 16px; line-height: 1.4; }
 .muted { opacity: 0.55; font-size: 0.8rem; }
 .code-form { display: flex; flex-direction: column; gap: 12px; }
 input {

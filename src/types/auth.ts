@@ -15,7 +15,10 @@ export type AuthPhase = 'login' | 'code' | 'main'
 
 export interface AuthState {
   phase: AuthPhase
-  selected_user: AmoUser | null
+  /** Inputs from login screen, kept while user is on the code screen. */
+  pending_account: string | null
+  pending_email: string | null
+  /** Filled after successful verify-code. */
   logged_in_user: AmoUser | null
   token: string | null
   dnd_on: boolean

@@ -1,56 +1,69 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuth } from '../composables/useAuth'
-import type { AmoUser } from '../types/auth'
 
-const { selectUser, loadAmoUsers } = useAuth()
-const userList = ref<AmoUser[]>([])
-const loading = ref(true)
+const { requestCode } = useAuth()
+
+const account = ref('')
+const email = ref('')
 const error = ref<string | null>(null)
-const selecting = ref<number | null>(null)
+const submitting = ref(false)
 
-onMounted(async () => {
-  try {
-    userList.value = await loadAmoUsers()
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Не удалось загрузить список'
-  } finally {
-    loading.value = false
-  }
-})
+const valid = computed(() =>
+  account.value.trim().length > 0 &&
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim()),
+)
 
-async function onSelect(u: AmoUser) {
-  if (selecting.value !== null) return
-  selecting.value = u.id
+async function onSubmit() {
+  if (submitting.value || !valid.value) return
+  submitting.value = true
   error.value = null
-  try {
-    await selectUser(u)
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Не удалось отправить код'
-    selecting.value = null
-  }
+  const r = await requestCode(account.value, email.value)
+  if (!r.ok) error.value = r.error
+  submitting.value = false
 }
 </script>
 
 <template>
   <main class="screen">
-    <h1>Кто ты?</h1>
-    <p v-if="loading" class="hint">Загрузка списка...</p>
-    <p v-else-if="error" class="error">{{ error }}</p>
-    <p v-else class="hint">Выбери себя, код придёт на твой email</p>
+    <h1>Sales Agent</h1>
+    <p class="hint">Введи поддомен amoCRM и свой рабочий email — код придёт на почту</p>
 
-    <ul v-if="!loading && !error" class="users">
-      <li v-for="u in userList" :key="u.id">
-        <button class="user-btn" :disabled="selecting !== null" @click="onSelect(u)">
-          <div class="avatar">{{ u.name.charAt(0) }}</div>
-          <div class="meta">
-            <div class="name">{{ u.name }}</div>
-            <div class="email">{{ u.email }}</div>
-          </div>
-          <div v-if="selecting === u.id" class="spinner">…</div>
-        </button>
-      </li>
-    </ul>
+    <form class="form" @submit.prevent="onSubmit">
+      <label>
+        <span class="label">amoCRM аккаунт</span>
+        <div class="subdomain">
+          <input
+            v-model="account"
+            placeholder="mogoby"
+            autocapitalize="none"
+            spellcheck="false"
+            :disabled="submitting"
+            autofocus
+          />
+          <span class="suffix">.amocrm.ru</span>
+        </div>
+      </label>
+
+      <label>
+        <span class="label">Email</span>
+        <input
+          v-model="email"
+          type="email"
+          inputmode="email"
+          placeholder="you@company.com"
+          autocapitalize="none"
+          spellcheck="false"
+          :disabled="submitting"
+        />
+      </label>
+
+      <div v-if="error" class="error">{{ error }}</div>
+
+      <button type="submit" class="primary" :disabled="!valid || submitting">
+        {{ submitting ? 'Отправляю код…' : 'Получить код' }}
+      </button>
+    </form>
   </main>
 </template>
 
@@ -63,33 +76,41 @@ async function onSelect(u: AmoUser) {
   box-sizing: border-box;
 }
 h1 { margin: 0 0 4px; font-size: 1.4rem; }
-.hint { margin: 0 0 16px; opacity: 0.6; font-size: 0.85rem; }
-.error { margin: 0 0 16px; color: #ff6464; font-size: 0.85rem; }
-.users { list-style: none; margin: 0; padding: 0; flex: 1; overflow-y: auto; }
-.users li { margin-bottom: 8px; }
-.user-btn {
-  display: flex; gap: 12px; align-items: center;
-  width: 100%; padding: 10px 12px;
+.hint { margin: 0 0 24px; opacity: 0.6; font-size: 0.85rem; }
+.form { display: flex; flex-direction: column; gap: 16px; }
+label { display: flex; flex-direction: column; gap: 6px; }
+.label { font-size: 0.8rem; opacity: 0.7; }
+input {
+  padding: 10px 12px;
   background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
   color: inherit;
-  cursor: pointer;
-  text-align: left;
+  border-radius: 8px;
   font-family: inherit;
-  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+  font-size: 1rem;
 }
-.user-btn:hover:not(:disabled) { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); }
-.user-btn:disabled { cursor: not-allowed; opacity: 0.5; }
-.avatar {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: #2d6cdf; color: white;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 600;
-  flex-shrink: 0;
+input:focus { outline: none; border-color: #2d6cdf; }
+input:disabled { opacity: 0.5; }
+.subdomain { display: flex; align-items: center; }
+.subdomain input { flex: 1; border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.suffix {
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-left: none;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  font-size: 0.85rem;
+  opacity: 0.55;
 }
-.meta { flex: 1; min-width: 0; }
-.name { font-size: 0.95rem; }
-.email { font-size: 0.75rem; opacity: 0.6; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
-.spinner { font-size: 1.2rem; opacity: 0.6; }
+.error { color: #ff6464; font-size: 0.85rem; }
+.primary {
+  padding: 12px;
+  background: #2d6cdf;
+  border: none; color: white;
+  font-size: 1rem; font-weight: 500;
+  border-radius: 8px; cursor: pointer;
+  margin-top: 8px;
+}
+.primary:disabled { opacity: 0.4; cursor: not-allowed; }
 </style>
