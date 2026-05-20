@@ -1,9 +1,11 @@
-use std::time::Duration;
-use tauri::AppHandle;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
+use tauri::{AppHandle, Manager, WindowEvent};
 use tauri_plugin_updater::UpdaterExt;
 
-const PERIODIC_CHECK_INTERVAL_SECS: u64 = 30 * 60;
-const STARTUP_GRACE_SECS: u64 = 60;
+const PERIODIC_CHECK_INTERVAL_SECS: u64 = 3 * 60;
+const STARTUP_GRACE_SECS: u64 = 15;
+const FOCUS_DEBOUNCE_SECS: u64 = 60;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -27,6 +29,30 @@ pub fn run() {
                     tokio::time::sleep(Duration::from_secs(PERIODIC_CHECK_INTERVAL_SECS)).await;
                 }
             });
+
+            if let Some(main_win) = app.get_webview_window("main") {
+                let handle_for_focus = app.handle().clone();
+                let last_focus_check: Arc<Mutex<Option<Instant>>> = Arc::new(Mutex::new(None));
+                main_win.on_window_event(move |evt| {
+                    if matches!(evt, WindowEvent::Focused(true)) {
+                        let now = Instant::now();
+                        let mut last = last_focus_check.lock().unwrap();
+                        if let Some(prev) = *last {
+                            if now.duration_since(prev).as_secs() < FOCUS_DEBOUNCE_SECS {
+                                return;
+                            }
+                        }
+                        *last = Some(now);
+                        let h = handle_for_focus.clone();
+                        tauri::async_runtime::spawn(async move {
+                            if let Err(e) = check_and_install(&h).await {
+                                eprintln!("[updater] focus-check failed: {e}");
+                            }
+                        });
+                    }
+                });
+            }
+
             Ok(())
         })
         .run(tauri::generate_context!())

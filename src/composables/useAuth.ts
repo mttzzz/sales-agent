@@ -147,3 +147,8 @@ export function useAuth() {
     toggleDnd,
   }
 }
+
+/** Plain non-reactive accessor for non-Vue contexts (e.g. pusher event handler). */
+export function isDndOn(): boolean {
+  return state.dnd_on
+}

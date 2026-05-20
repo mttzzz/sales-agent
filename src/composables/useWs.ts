@@ -1,6 +1,7 @@
 import { readonly, ref } from 'vue'
 import Pusher, { type Channel } from 'pusher-js'
 import { notifyNewLead } from './useNotifications'
+import { isDndOn } from './useAuth'
 
 const APP_KEY = (import.meta.env.VITE_SALES_AGENT_APP_KEY as string | undefined) ?? ''
 const WS_HOST = (import.meta.env.VITE_SALES_AGENT_WS_HOST as string | undefined) ?? 'reverb.pushka.biz'
@@ -88,6 +89,10 @@ export function startWs(token: string, amoUserId: number): void {
   })
   channel.bind('NewLeadIncoming', (data: NewLeadPayload) => {
     console.log('[ws] NewLeadIncoming:', data)
+    if (isDndOn()) {
+      console.log('[ws] NewLeadIncoming suppressed: DND is on')
+      return
+    }
     void notifyNewLead(data.lead_id, data.lead_url)
   })
 }

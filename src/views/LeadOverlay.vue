@@ -71,7 +71,6 @@ onUnmounted(() => {
         </div>
         <div class="text">
           <div class="title">Новая заявка</div>
-          <div class="subtitle">Сделка #{{ leadId ?? '—' }}</div>
         </div>
       </div>
       <div class="actions">
@@ -145,13 +144,6 @@ html, body {
   font-weight: 700;
   letter-spacing: -0.01em;
 }
-.subtitle {
-  font-size: 1rem;
-  margin-top: 4px;
-  opacity: 0.92;
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-}
-
 .actions {
   display: flex;
   gap: 10px;
