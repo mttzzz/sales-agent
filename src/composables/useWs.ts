@@ -1,10 +1,11 @@
 import { readonly, ref } from 'vue'
 import Pusher, { type Channel } from 'pusher-js'
 
-const APP_KEY = '6cff1c3f447deb40f3f26bda6a8fa303'
-const WS_HOST = 'reverb.pushka.biz'
+const APP_KEY = (import.meta.env.VITE_SALES_AGENT_APP_KEY as string | undefined) ?? ''
+const WS_HOST = (import.meta.env.VITE_SALES_AGENT_WS_HOST as string | undefined) ?? 'reverb.pushka.biz'
 const WS_PORT = 443
-const AUTH_ENDPOINT = 'https://octane.pushka.biz/api/desktop/v1/broadcasting/auth'
+const AUTH_ENDPOINT = (import.meta.env.VITE_SALES_AGENT_AUTH_ENDPOINT as string | undefined)
+  ?? 'https://octane.pushka.biz/api/desktop/v1/broadcasting/auth'
 
 export type WsStatus = 'idle' | 'connecting' | 'connected' | 'disconnected' | 'error'
 
@@ -20,6 +21,11 @@ interface DebugEchoPayload {
 
 export function startWs(token: string, amoUserId: number): void {
   if (pusher) return
+  if (!APP_KEY) {
+    console.warn('[ws] VITE_SALES_AGENT_APP_KEY not set — build misconfigured, skipping WS')
+    status.value = 'error'
+    return
+  }
   status.value = 'connecting'
 
   pusher = new Pusher(APP_KEY, {

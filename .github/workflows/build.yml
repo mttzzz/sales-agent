@@ -45,6 +45,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VITE_DESKTOP_BOOTSTRAP_TOKEN: ${{ secrets.DESKTOP_BOOTSTRAP_TOKEN }}
+          VITE_SALES_AGENT_APP_KEY: ${{ secrets.SALES_AGENT_APP_KEY }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
