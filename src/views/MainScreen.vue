@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { getVersion } from '@tauri-apps/api/app'
 import { isEnabled as isAutostartEnabled, enable as enableAutostart, disable as disableAutostart } from '@tauri-apps/plugin-autostart'
 import { useAuth } from '../composables/useAuth'
 import { useWs } from '../composables/useWs'
@@ -19,10 +20,20 @@ async function onTestOverlay(): Promise<void> {
 const autostartOn = ref(false)
 const autostartBusy = ref(false)
 const dndBusy = ref(false)
+const version = ref('?')
 
 onMounted(async () => {
   try { autostartOn.value = await isAutostartEnabled() }
   catch (err) { console.warn('autostart probe failed', err) }
+  version.value = await getVersion().catch(() => '?')
+  console.log('[main] state.account =', JSON.stringify(state.account))
+})
+
+const accountDomain = computed(() => {
+  const acc = state.account
+  if (!acc?.subdomain) return null
+  const tld = acc.domain === 'ru' || !acc.domain ? 'amocrm.ru' : 'kommo.com'
+  return `${acc.subdomain}.${tld}`
 })
 
 async function onToggleAutostart(): Promise<void> {
@@ -76,6 +87,7 @@ const wsDetail = computed(() => {
     <header class="brand">
       <div class="brand-mark">SA</div>
       <div class="brand-title">Sales Agent</div>
+      <div class="brand-version">v{{ version }}</div>
     </header>
 
     <section class="user-card">
@@ -83,7 +95,7 @@ const wsDetail = computed(() => {
       <div class="meta">
         <div class="name">{{ state.logged_in_user?.name }}</div>
         <div class="email">{{ state.logged_in_user?.email }}</div>
-        <div class="account">{{ state.account?.subdomain }}.amocrm.ru</div>
+        <div class="account">{{ accountDomain ?? '—' }}</div>
       </div>
     </section>
 
@@ -151,15 +163,21 @@ const wsDetail = computed(() => {
   box-sizing: border-box;
 }
 
-.brand { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+.brand { display: flex; align-items: baseline; gap: 10px; margin-bottom: 24px; }
 .brand-mark {
   width: 32px; height: 32px;
   border-radius: 8px;
   background: #2d6cdf; color: #fff;
   display: grid; place-items: center;
   font-weight: 700; font-size: 0.85rem;
+  align-self: center;
 }
 .brand-title { font-size: 1rem; font-weight: 600; opacity: 0.85; }
+.brand-version {
+  font-size: 0.74rem;
+  opacity: 0.4;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+}
 
 .user-card {
   display: flex; gap: 14px; align-items: center;

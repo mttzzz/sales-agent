@@ -98,9 +98,6 @@ html, body {
 .overlay-root {
   height: 100vh;
   width: 100vw;
-  display: grid;
-  place-items: center;
-  padding: 14px;
   box-sizing: border-box;
 }
 
@@ -108,9 +105,7 @@ html, body {
   width: 100%;
   height: 100%;
   background: linear-gradient(135deg, #1f3a8a 0%, #2d6cdf 100%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 18px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
   display: flex;
   flex-direction: column;
   padding: 18px 22px;

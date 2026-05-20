@@ -8,6 +8,7 @@ export interface AmoUser {
 export interface AccountInfo {
   id: number
   subdomain: string
+  domain?: string
   name: string
 }
 
