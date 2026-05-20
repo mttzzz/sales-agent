@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { getVersion } from '@tauri-apps/api/app'
 import { useAuth, loadAuth } from './composables/useAuth'
 import { maybeAutoUpdate, startPeriodicCheck } from './composables/useUpdater'
+import { startWs, stopWs } from './composables/useWs'
 import LoginScreen from './views/LoginScreen.vue'
 import CodeScreen from './views/CodeScreen.vue'
 import MainScreen from './views/MainScreen.vue'
@@ -20,6 +21,18 @@ onMounted(async () => {
     console.warn('Failed to restore auth state:', e)
   }
 })
+
+watch(
+  () => [state.token, state.logged_in_user?.id] as const,
+  ([token, userId]) => {
+    if (token && typeof userId === 'number') {
+      startWs(token, userId)
+    } else {
+      stopWs()
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
