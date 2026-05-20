@@ -1,38 +1,25 @@
-import {
-  isPermissionGranted,
-  requestPermission,
-  sendNotification,
-} from '@tauri-apps/plugin-notification'
+import { emitTo } from '@tauri-apps/api/event'
+import { WebviewWindow } from '@tauri-apps/api/webviewWindow'
 
-let permissionResolved: Promise<boolean> | null = null
-
-async function ensurePermission(): Promise<boolean> {
-  if (!permissionResolved) {
-    permissionResolved = (async () => {
-      try {
-        if (await isPermissionGranted()) return true
-        const granted = await requestPermission()
-        return granted === 'granted'
-      }
-      catch (err) {
-        console.warn('[notify] permission check failed', err)
-        return false
-      }
-    })()
-  }
-  return permissionResolved
-}
+const OVERLAY_LABEL = 'lead-overlay'
 
 export async function notifyNewLead(leadId: number): Promise<void> {
-  if (!(await ensurePermission())) return
+  const overlay = await WebviewWindow.getByLabel(OVERLAY_LABEL)
+  if (!overlay) {
+    console.warn('[notify] lead-overlay window not found')
+    return
+  }
 
   try {
-    sendNotification({
-      title: 'Новая заявка',
-      body: `Сделка #${leadId}`,
+    await emitTo(OVERLAY_LABEL, 'new-lead', {
+      lead_id: leadId,
+      at: new Date().toISOString(),
     })
+    await overlay.show()
+    await overlay.setAlwaysOnTop(true)
+    await overlay.center()
   }
   catch (err) {
-    console.warn('[notify] sendNotification failed', err)
+    console.warn('[notify] overlay show failed', err)
   }
 }
