@@ -36,15 +36,19 @@ async function onSubmit() {
       Введите поддомен amoCRM и email,<br />под которым Вы входите в amoCRM.
     </p>
 
-    <form class="form" @submit.prevent="onSubmit">
+    <form class="form" autocomplete="off" @submit.prevent="onSubmit">
       <div class="field">
         <label for="account">Поддомен amoCRM</label>
         <div class="input-wrap" :class="{ 'is-disabled': submitting }">
           <input
             id="account"
             v-model="account"
+            type="text"
+            name="amocrm-subdomain-no-fill"
             placeholder="mogoby"
+            autocomplete="off"
             autocapitalize="none"
+            autocorrect="off"
             spellcheck="false"
             :disabled="submitting"
             autofocus
@@ -59,10 +63,13 @@ async function onSubmit() {
           <input
             id="email"
             v-model="email"
-            type="email"
+            type="text"
             inputmode="email"
+            name="amocrm-email-no-fill"
             placeholder="you@company.com"
+            autocomplete="off"
             autocapitalize="none"
+            autocorrect="off"
             spellcheck="false"
             :disabled="submitting"
           />
@@ -159,6 +166,15 @@ label {
   outline: none;
 }
 .input-wrap input::placeholder { opacity: 0.35; }
+.input-wrap input:-webkit-autofill,
+.input-wrap input:-webkit-autofill:hover,
+.input-wrap input:-webkit-autofill:focus,
+.input-wrap input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 100px rgba(255, 255, 255, 0.04) inset !important;
+  -webkit-text-fill-color: #f6f6f6 !important;
+  caret-color: #f6f6f6;
+  transition: background-color 5000s ease-in-out 0s;
+}
 .input-wrap .suffix {
   display: flex;
   align-items: center;

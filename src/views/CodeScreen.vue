@@ -40,15 +40,20 @@ async function onCancel() {
       <span class="muted">— аккаунт {{ state.pending_account }}.amocrm.ru</span>
     </p>
 
-    <form class="form" @submit.prevent="onSubmit">
+    <form class="form" autocomplete="off" @submit.prevent="onSubmit">
       <div class="field">
         <label for="code">6-значный код из письма</label>
         <input
           id="code"
           v-model="code"
+          type="text"
           inputmode="numeric"
           pattern="[0-9]*"
           maxlength="6"
+          name="otp-code"
+          autocomplete="one-time-code"
+          autocorrect="off"
+          spellcheck="false"
           placeholder="000000"
           autofocus
           :disabled="submitting"
@@ -140,6 +145,15 @@ label {
   box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.18);
 }
 .code-input:disabled { opacity: 0.5; }
+.code-input:-webkit-autofill,
+.code-input:-webkit-autofill:hover,
+.code-input:-webkit-autofill:focus,
+.code-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 100px rgba(255, 255, 255, 0.04) inset !important;
+  -webkit-text-fill-color: #f6f6f6 !important;
+  caret-color: #f6f6f6;
+  transition: background-color 5000s ease-in-out 0s;
+}
 
 .error {
   color: #ff7575;
