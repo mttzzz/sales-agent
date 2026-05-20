@@ -1,6 +1,6 @@
 [package]
 name = "sales-agent"
-version = "0.5.0"
+version = "0.6.0"
 description = "Sales Agent — desktop notification client for sales managers"
 authors = ["mttzzz <taborrnd@gmail.com>"]
 edition = "2021"

@@ -6,20 +6,26 @@ const { state, logout } = useAuth()
 
 <template>
   <main class="screen">
-    <div class="header">
+    <header class="brand">
+      <div class="brand-mark">SA</div>
+      <div class="brand-title">Sales Agent</div>
+    </header>
+
+    <section class="user-card">
       <div class="avatar">{{ state.logged_in_user?.name?.charAt(0) }}</div>
       <div class="meta">
         <div class="name">{{ state.logged_in_user?.name }}</div>
         <div class="email">{{ state.logged_in_user?.email }}</div>
+        <div class="account">{{ state.account?.subdomain }}.amocrm.ru</div>
       </div>
-    </div>
+    </section>
 
     <div class="status">
       <div class="dot connected" />
-      <span>Готов к приёму заявок (mock)</span>
+      <span>Готов к приёму заявок</span>
     </div>
 
-    <div class="poc-note">POC Phase 1 — WS/уведомления подключаются в следующих фазах</div>
+    <p class="poc-note">POC Phase 1–3 · уведомления подключаются в следующих фазах</p>
 
     <button class="logout" @click="logout">Выйти</button>
   </main>
@@ -27,41 +33,92 @@ const { state, logout } = useAuth()
 
 <style scoped>
 .screen {
-  padding: 24px;
+  padding: 28px;
   display: flex;
   flex-direction: column;
   height: 100vh;
   box-sizing: border-box;
 }
-.header { display: flex; gap: 12px; align-items: center; margin-bottom: 24px; }
-.avatar {
-  width: 48px; height: 48px; border-radius: 50%;
-  background: #2d6cdf; color: white;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 600; font-size: 1.2rem;
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
 }
-.name { font-size: 1.05rem; font-weight: 500; }
-.email { font-size: 0.8rem; opacity: 0.55; }
-.status {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 12px;
-  background: rgba(78, 181, 110, 0.1);
-  border: 1px solid rgba(78, 181, 110, 0.3);
+.brand-mark {
+  width: 32px; height: 32px;
   border-radius: 8px;
-  margin-bottom: 12px;
+  background: #2d6cdf;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.85rem;
 }
-.dot { width: 8px; height: 8px; border-radius: 50%; }
-.dot.connected { background: #4eb56e; box-shadow: 0 0 8px #4eb56e; }
+.brand-title { font-size: 1rem; font-weight: 600; opacity: 0.85; }
+
+.user-card {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+.avatar {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2d6cdf, #5a86e8);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+.meta { min-width: 0; }
+.name { font-size: 1.02rem; font-weight: 500; }
+.email { font-size: 0.8rem; opacity: 0.6; margin-top: 2px; }
+.account { font-size: 0.78rem; opacity: 0.45; margin-top: 4px; font-family: ui-monospace, monospace; }
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(78, 181, 110, 0.08);
+  border: 1px solid rgba(78, 181, 110, 0.25);
+  border-radius: 10px;
+  margin-bottom: 14px;
+  font-size: 0.9rem;
+}
+.dot { width: 9px; height: 9px; border-radius: 50%; }
+.dot.connected { background: #4eb56e; box-shadow: 0 0 10px #4eb56e; }
+
 .poc-note {
-  opacity: 0.4; font-size: 0.75rem; font-style: italic;
-  margin-bottom: auto;
+  opacity: 0.4;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin: 0 0 auto;
 }
+
 .logout {
-  margin-top: 24px;
-  padding: 10px; background: none;
-  border: 1px solid rgba(255,255,255,0.2);
-  color: inherit; border-radius: 8px;
-  cursor: pointer; font-family: inherit;
+  margin-top: 20px;
+  padding: 11px;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: inherit;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.92rem;
+  transition: background 0.15s, border-color 0.15s;
 }
-.logout:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.4); }
+.logout:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.35);
+}
 </style>
