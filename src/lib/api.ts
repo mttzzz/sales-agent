@@ -1,7 +1,17 @@
+import { getVersion } from '@tauri-apps/api/app'
 import type { AccountInfo, AmoUser } from '../types/auth'
 
 const API_BASE_URL = 'https://octane.pushka.biz/api/desktop/v1'
 const BOOTSTRAP_TOKEN = (import.meta.env.VITE_DESKTOP_BOOTSTRAP_TOKEN as string | undefined) ?? ''
+
+let cachedVersion: string | null = null
+async function appVersion(): Promise<string> {
+  if (cachedVersion === null) {
+    try { cachedVersion = await getVersion() }
+    catch { cachedVersion = 'unknown' }
+  }
+  return cachedVersion
+}
 
 export interface VerifyCodeResponse {
   token: string
@@ -40,6 +50,7 @@ async function bootstrapRequest(path: string, init: RequestInit = {}): Promise<R
       Accept: 'application/json',
       'Content-Type': 'application/json',
       'X-Desktop-Bootstrap-Token': BOOTSTRAP_TOKEN,
+      'X-Sales-Agent-Version': await appVersion(),
       ...(init.headers ?? {}),
     },
   })
@@ -52,6 +63,7 @@ async function bearerRequest(path: string, token: string, init: RequestInit = {}
       Accept: 'application/json',
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
+      'X-Sales-Agent-Version': await appVersion(),
       ...(init.headers ?? {}),
     },
   })

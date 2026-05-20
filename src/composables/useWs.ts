@@ -1,7 +1,9 @@
 import { readonly, ref } from 'vue'
 import Pusher, { type Channel } from 'pusher-js'
+import { getVersion } from '@tauri-apps/api/app'
 import { notifyNewLead } from './useNotifications'
 import { isDndOn } from './useAuth'
+import { maybeAutoUpdate } from './useUpdater'
 
 const APP_KEY = (import.meta.env.VITE_SALES_AGENT_APP_KEY as string | undefined) ?? ''
 const WS_HOST = (import.meta.env.VITE_SALES_AGENT_WS_HOST as string | undefined) ?? 'reverb.pushka.biz'
@@ -29,7 +31,7 @@ interface DebugEchoPayload {
   at: string
 }
 
-export function startWs(token: string, amoUserId: number): void {
+export async function startWs(token: string, amoUserId: number): Promise<void> {
   if (pusher) return
   if (!APP_KEY) {
     console.warn('[ws] VITE_SALES_AGENT_APP_KEY not set — build misconfigured, skipping WS')
@@ -37,6 +39,8 @@ export function startWs(token: string, amoUserId: number): void {
     return
   }
   status.value = 'connecting'
+
+  const version = await getVersion().catch(() => 'unknown')
 
   pusher = new Pusher(APP_KEY, {
     cluster: 'eu',
@@ -51,6 +55,7 @@ export function startWs(token: string, amoUserId: number): void {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/json',
+        'X-Sales-Agent-Version': version,
       },
     },
   })
@@ -94,6 +99,15 @@ export function startWs(token: string, amoUserId: number): void {
       return
     }
     void notifyNewLead(data.lead_id, data.lead_url)
+  })
+
+  const updatesChannel = pusher.subscribe('desktop-app-updates')
+  updatesChannel.bind('pusher:subscription_succeeded', () => {
+    console.log('[ws] subscribed: desktop-app-updates')
+  })
+  updatesChannel.bind('AppUpdateAvailable', (data: { version: string }) => {
+    console.log('[ws] AppUpdateAvailable:', data)
+    void maybeAutoUpdate()
   })
 }
 

@@ -25,7 +25,7 @@ watch(
   () => [state.token, state.logged_in_user?.id] as const,
   ([token, userId]) => {
     if (token && typeof userId === 'number') {
-      startWs(token, userId)
+      void startWs(token, userId)
     } else {
       stopWs()
     }
