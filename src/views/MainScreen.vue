@@ -4,7 +4,16 @@ import { useAuth } from '../composables/useAuth'
 import { useWs } from '../composables/useWs'
 
 const { state, logout } = useAuth()
-const { status } = useWs()
+const { status, newLeadsCount, latestLead } = useWs()
+
+const leadsLabel = computed(() => {
+  const n = newLeadsCount.value
+  const mod10 = n % 10
+  const mod100 = n % 100
+  if (mod10 === 1 && mod100 !== 11) return `${n} заявка`
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return `${n} заявки`
+  return `${n} заявок`
+})
 
 const statusInfo = computed(() => {
   switch (status.value) {
@@ -40,9 +49,13 @@ const statusInfo = computed(() => {
     <div class="status" :class="`status-${statusInfo.dot}`">
       <div class="dot" :class="statusInfo.dot" />
       <span>{{ statusInfo.text }}</span>
+      <span v-if="newLeadsCount > 0" class="leads-badge">{{ leadsLabel }}</span>
     </div>
 
-    <p class="poc-note">POC Phase 4 · WS-подключение активно, уведомления о заявках — следующая фаза</p>
+    <p v-if="latestLead" class="latest-lead">
+      Последняя: сделка #{{ latestLead.lead_id }}
+    </p>
+    <p v-else class="poc-note">Ждём первую заявку…</p>
 
     <button class="logout" @click="logout">Выйти</button>
   </main>
@@ -124,6 +137,25 @@ const statusInfo = computed(() => {
   font-size: 0.78rem;
   line-height: 1.5;
   margin: 0 0 auto;
+}
+
+.leads-badge {
+  margin-left: auto;
+  padding: 3px 9px;
+  background: rgba(78, 181, 110, 0.18);
+  border: 1px solid rgba(78, 181, 110, 0.4);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #6dd494;
+}
+
+.latest-lead {
+  opacity: 0.7;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0 0 auto;
+  color: #6dd494;
 }
 
 .logout {
